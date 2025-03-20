@@ -1,0 +1,80 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: my-flask-rollout
+  namespace: default
+spec:
+  replicas: 3
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: my-flask-app
+  template:
+    metadata:
+      labels:
+        app: my-flask-app
+    spec:
+      containers:
+      - name: flask-app
+        image: myflask:v1  # 初始部署先用 v1
+        ports:
+        - containerPort: 5000
+
+  strategy:
+    canary:
+      # 这两个service分别对应stable和canary
+      stableService: my-flask-stable-svc
+      canaryService: my-flask-canary-svc
+
+      # 定义金丝雀步骤：先给20%流量->pause(30s)->100%->结束
+      steps:
+      - setWeight: 20
+      - pause: { duration: 30 }
+      - setWeight: 100
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-flask-stable-svc
+spec:
+  selector:
+    app: my-flask-app
+  ports:
+  - port: 80
+    targetPort: 5000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-flask-canary-svc
+spec:
+  selector:
+    app: my-flask-app
+  ports:
+  - port: 80
+    targetPort: 5000
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: my-flask-ingress
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    # 告知Argo Rollouts接管流量管理
+    argo-rollouts.argoproj.io/managed-by: "my-flask-rollout"
+spec:
+  rules:
+    - host: flask-demo.docker
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              # stable-svc 作为默认后端
+              name: my-flask-stable-svc
+              port:
+                number: 80

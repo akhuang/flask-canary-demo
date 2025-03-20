@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flask-ingress
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    # 如果你希望 Rollouts自己管理某些 annotation，可以加:
+    # argo-rollouts.argoproj.io/managed-by: "flask-rollout"
+spec:
+  rules:
+  - host: flask-gitops.docker
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: flask-stable-svc
+            port:
+              number: 80
