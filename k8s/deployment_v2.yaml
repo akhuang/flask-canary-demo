@@ -1,0 +1,29 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: flask-canary
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: flask-canary
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: flask-canary
+        version: v2
+    spec:
+      containers:
+      - name: flask-app
+        image: flask-canary-demo:v2
+        ports:
+        - containerPort: 5000
+  strategy:
+    canary:
+      steps:
+      - setWeight: 20
+      - pause: {duration: 30}
+      - setWeight: 50
+      - pause: {duration: 30}
+      - setWeight: 100

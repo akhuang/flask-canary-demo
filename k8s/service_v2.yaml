@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: flask-v2-svc
+spec:
+  selector:
+    app: flask-canary
+    version: v2
+  ports:
+  - port: 80
+    targetPort: 5000
