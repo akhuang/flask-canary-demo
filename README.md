@@ -11,3 +11,8 @@ mzxyEP56eN5TOukN
 docker run --rm -l dev.orbstack.domains=foo.local,bar.local nginx
 
 docker run --rm -l dev.orbstack.domains=foo.local,bar.local,flask-gitops.local nginx
+
+
+cd my-flask-app
+docker build -t myflask:v1 --build-arg FLASK_VERSION=v1 .
+docker build -t myflask:v2 --build-arg FLASK_VERSION=v2 .
