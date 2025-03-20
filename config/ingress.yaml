@@ -9,7 +9,7 @@ metadata:
     # argo-rollouts.argoproj.io/managed-by: "flask-rollout"
 spec:
   rules:
-  - host: gitops.local
+  - host: gitops.k8s.orb.local
     http:
       paths:
       - path: /
