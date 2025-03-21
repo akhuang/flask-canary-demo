@@ -23,6 +23,10 @@ spec:
     canary:
       stableService: flask-stable-svc
       canaryService: flask-canary-svc
+      trafficRouting:
+        kubernetes:
+          stableService: flask-stable-svc
+          canaryService: flask-canary-svc
       steps:
         - setWeight: 20
         - pause: {}
