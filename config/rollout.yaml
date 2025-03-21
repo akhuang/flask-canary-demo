@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: flask-app
-        image: myflask:v2.4.1  # <--- 改成你推到仓库的镜像repo:tag
+        image: myflask:v2.4.2  # <--- 改成你推到仓库的镜像repo:tag
         ports:
         - containerPort: 5000
 
