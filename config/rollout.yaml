@@ -29,5 +29,5 @@ spec:
           canaryService: flask-canary-svc
       steps:
         - setWeight: 20
-        - pause: {}
+        - pause: {duration: 30}
         - setWeight: 100
