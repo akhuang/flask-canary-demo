@@ -25,6 +25,5 @@ spec:
       canaryService: flask-canary-svc
       steps:
         - setWeight: 20
-        - pause:            # 指明 pause，但不设 duration，表示无限等待
-            duration: 0     # 或者干脆直接省略 duration
+        - pause: {}
         - setWeight: 100
