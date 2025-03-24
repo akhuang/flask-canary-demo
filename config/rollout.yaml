@@ -21,6 +21,7 @@ spec:
 
   strategy:
     canary:
+      stableService: flask-stable-svc  # 添加稳定版服务名称
       canaryService: flask-canary-svc
       trafficRouting:
         nginx:
