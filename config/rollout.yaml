@@ -21,12 +21,11 @@ spec:
 
   strategy:
     canary:
-      stableService: flask-stable-svc
       canaryService: flask-canary-svc
       trafficRouting:
-        kubernetes:
-          stableService: flask-stable-svc
-          canaryService: flask-canary-svc
+        nginx:
+          stableIngress: my-app-stable
+          canaryIngress: my-app-canary
       steps:
         - setWeight: 20
         - pause: {}
