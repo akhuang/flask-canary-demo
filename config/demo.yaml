@@ -13,7 +13,7 @@ spec:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: http
   selector:
     app: canary-demo
 ---
@@ -27,7 +27,7 @@ spec:
   - name: http
     port: 80
     protocol: TCP
-    targetPort: 8080
+    targetPort: http
   selector:
     app: canary-demo
 ---
