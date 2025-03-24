@@ -1,7 +1,13 @@
 apiVersion: v1
+kind: Namespace
+metadata:
+  name: canary-demo
+---
+apiVersion: v1
 kind: Service
 metadata:
   name: canary-demo
+  namespace: canary-demo
 spec:
   ports:
   - name: http
@@ -15,6 +21,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: canary-demo-preview
+  namespace: canary-demo
 spec:
   ports:
   - name: http
@@ -28,6 +35,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
   name: canary-demo
+  namespace: canary-demo
 spec:
   replicas: 5
   revisionHistoryLimit: 1
@@ -70,14 +78,15 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: canary-demo
+  namespace: canary-demo
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/app-root: /
     nginx.ingress.kubernetes.io/proxy-body-size: 100m
-  name: canary-demo
-spec:
+  spec:
   rules:
-  - host: canary.orb.local
+  - host: canary.k8s.orb.local
     http:
       paths:
       - backend:
@@ -91,14 +100,15 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: canary-demo-preview
+  namespace: canary-demo
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/app-root: /
     nginx.ingress.kubernetes.io/proxy-body-size: 100m
-  name: canary-demo-preview
-spec:
+  spec:
   rules:
-  - host: canary-preview.orb.local
+  - host: canary-preview.k8s.orb.local
     http:
       paths:
       - backend:
