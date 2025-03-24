@@ -18,11 +18,22 @@ spec:
         image: myflask:v2.4.4  # <--- 改成你推到仓库的镜像repo:tag
         ports:
         - containerPort: 5000
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+          initialDelaySeconds: 15
+          periodSeconds: 20
 
   strategy:
-    canary:
-      canaryService: flask-canary-svc
-      steps:
-        - setWeight: 20
-        - pause: {}
-        - setWeight: 100
+    blueGreen:
+      activeService: flask-active-svc
+      previewService: flask-preview-svc
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 300
