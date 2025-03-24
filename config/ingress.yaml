@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: my-app-active
-  namespace: default
+  namespace: argo-bluegreen
   annotations:
     kubernetes.io/ingress.class: "nginx"
 spec:
@@ -22,7 +22,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: my-app-preview
-  namespace: default
+  namespace: argo-bluegreen
   annotations:
     kubernetes.io/ingress.class: "nginx"
 spec:

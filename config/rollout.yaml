@@ -1,8 +1,8 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Rollout
 metadata:
-  name: flask-rollout
-  namespace: default
+  name: flask-rollout-bluegreen
+  namespace: argo-bluegreen
 spec:
   replicas: 3
   selector:
