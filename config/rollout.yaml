@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: flask-app
-        image: myflask:v2.4.6  # <--- 改成你推到仓库的镜像repo:tag
+        image: myflask:v2.4.4  # <--- 改成你推到仓库的镜像repo:tag
         ports:
         - containerPort: 5000
         readinessProbe:
@@ -36,8 +36,34 @@ spec:
       activeService: flask-active-svc
       previewService: flask-preview-svc
       autoPromotionEnabled: false
-      steps:
-      - name: pause-before-promotion
-        pause: {}
-      - name: promote
-        setWeight: 100
+      scaleDownDelaySeconds: 0  # 设置为0表示永不删除旧版本
+      prePromotionAnalysis:
+        templates:
+        - templateName: pause-template
+      anti-affinity: # 确保新旧版本不在同一节点
+        preferredDuringSchedulingIgnoredDuringExecution:
+          weight: 100
+
+---
+# 这个AnalysisTemplate永远处于暂停状态，等待手动确认
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: pause-template
+  namespace: argo-bluegreen
+spec:
+  metrics:
+  - name: manual-approval
+    provider:
+      job:
+        spec:
+          template:
+            spec:
+              containers:
+              - name: sleep
+                image: alpine:3.8
+                command: [sh, -c, sleep 86400] # 睡眠24小时等待手动确认
+              restartPolicy: Never
+          backoffLimit: 0
+      # 结果总是成功，但需要手动确认
+      successCondition: "true"
