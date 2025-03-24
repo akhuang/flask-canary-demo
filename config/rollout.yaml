@@ -36,7 +36,6 @@ spec:
       activeService: flask-active-svc
       previewService: flask-preview-svc
       autoPromotionEnabled: false
-      scaleDownDelaySeconds: 300
       steps:
       - name: pause-before-promotion
         pause: {}
