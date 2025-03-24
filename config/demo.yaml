@@ -77,7 +77,7 @@ metadata:
   name: canary-demo
 spec:
   rules:
-  - host: canary.k8s.orb.local
+  - host: canary.orb.local
     http:
       paths:
       - backend:
@@ -98,7 +98,7 @@ metadata:
   name: canary-demo-preview
 spec:
   rules:
-  - host: canary-preview.k8s.orb.local
+  - host: canary-preview.orb.local
     http:
       paths:
       - backend:
