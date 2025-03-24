@@ -17,7 +17,7 @@ cd my-flask-app
 docker build -t myflask:v1 --build-arg FLASK_VERSION=v1 .
 docker build -t myflask:v2 --build-arg FLASK_VERSION=v2 .
 
-docker build -t myflask:v2.4 --build-arg FLASK_VERSION=v2.4 .
+docker build -t myflask:v2.4.5 --build-arg FLASK_VERSION=v2.4.5 .
 
 
 https://gitops.k8s.orb.local/
