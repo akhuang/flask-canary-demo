@@ -24,3 +24,7 @@ https://gitops.k8s.orb.local/
 
 
 for i in {1..10}; do curl -s https://gitops.k8s.orb.local/; done
+
+
+for i in {1..10}; do curl -s https://bluegreen.k8s.orb.local/; done
+for i in {1..10}; do curl -s https://preview.bluegreen.k8s.orb.local/; done
