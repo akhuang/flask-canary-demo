@@ -8,6 +8,10 @@ def hello():
     version = os.getenv("FLASK_VERSION", "unknown")
     return f"Hello from Flask version {version}!\n"
 
+@app.route("/health")
+def health_check():
+    return "OK", 200
+
 if __name__ == "__main__":
     # 启动在 0.0.0.0:5000
     app.run(host="0.0.0.0", port=5000)
