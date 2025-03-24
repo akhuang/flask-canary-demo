@@ -18,28 +18,6 @@ spec:
             port:
               number: 80
 ---
-# 添加一个专门的灰度访问入口
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: my-app-canary-weight
-  annotations:
-    kubernetes.io/ingress.class: nginx
-    nginx.ingress.kubernetes.io/canary: "true"
-    nginx.ingress.kubernetes.io/canary-weight: "20"
-spec:
-  rules:
-  - host: gitops.k8s.orb.local
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: flask-canary-svc
-            port:
-              number: 80
----
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
