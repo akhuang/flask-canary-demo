@@ -37,3 +37,8 @@ spec:
       previewService: flask-preview-svc
       autoPromotionEnabled: false
       scaleDownDelaySeconds: 300
+      steps:
+      - name: pause-before-promotion
+        pause: {}
+      - name: promote
+        setWeight: 100
