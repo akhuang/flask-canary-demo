@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: flask-stable-svc
+  name: flask-active-svc
   namespace: argo-bluegreen
 spec:
   selector:
@@ -14,7 +14,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: flask-canary-svc
+  name: flask-preview-svc
   namespace: argo-bluegreen
 spec:
   selector:
