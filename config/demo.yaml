@@ -82,7 +82,6 @@ metadata:
   namespace: canary-demo
   annotations:
     kubernetes.io/ingress.class: nginx
-    # nginx.ingress.kubernetes.io/app-root: /
     nginx.ingress.kubernetes.io/proxy-body-size: 100m
 spec:
   rules:
@@ -105,12 +104,6 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: nginx
     nginx.ingress.kubernetes.io/proxy-body-size: 100m
-    # 启用 Canary 功能
-    nginx.ingress.kubernetes.io/canary: "true"
-    # 使用请求参数进行灰度
-    nginx.ingress.kubernetes.io/canary-by-query: "version"
-    # 当请求参数 version=canary 时进入灰度版本
-    nginx.ingress.kubernetes.io/canary-by-query-value: "canary"
 spec:
   rules:
   - host: canary-preview.k8s.orb.local
