@@ -1,0 +1,28 @@
+version: '3'
+
+services:
+  flask-app:
+    build:
+      context: .
+      args:
+        FLASK_VERSION: "2.4.5" # Change this to match your version
+    ports:
+      - "5001:5001"
+    environment:
+      - REDIS_HOST=redis
+      - FLASK_VERSION=2.4.5
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  redis:
+    image: redis:6.2-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+
+volumes:
+  redis-data: 
