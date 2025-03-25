@@ -77,8 +77,59 @@ flowchart TD
 ## Architecture Components
 
 ### 1. Rate Limiting
-- Implement token bucket algorithm to control request rates
-- Configure per-user and global rate limits
+两层速率限制保护机制：
+
+#### Global Rate Limiting
+```mermaid
+graph TD
+    A[Request] --> B[Get Current Second]
+    B --> C[Check Previous Second Count]
+    C --> D[Check Current Second Count]
+    D --> E{Total Under Limit?}
+    E -->|Yes| F[Allow Request]
+    E -->|No| G[Return 429]
+```
+
+- 基于滑动时间窗口的全局速率限制
+- 同时考虑前一秒和当前秒的请求总数
+- 使用 Redis 的原子操作保证计数准确性
+- 自动清理过期的计数器（5秒后）
+
+#### Per-User Rate Limiting
+```mermaid
+graph TD
+    A[Request] --> B[Get User Token Bucket]
+    B --> C[Calculate Token Refill]
+    C --> D[Update Token Count]
+    D --> E{Has Token?}
+    E -->|Yes| F[Consume Token]
+    E -->|No| G[Return 429]
+    F --> H[Allow Request]
+```
+
+- 改进的令牌桶算法实现
+- 使用微秒级时间戳提高精度
+- Redis Pipeline 保证原子性
+- 动态令牌补充
+- 自动过期清理（1小时）
+
+#### Rate Limit Configuration
+| Parameter | Description | Default |
+|-----------|-------------|----------|
+| RATE_LIMIT_TOKENS | 每用户初始令牌数 | 100 |
+| TOKEN_REFILL_RATE | 每秒补充令牌数 | 20 |
+| GLOBAL_RATE_LIMIT | 全局每秒请求限制 | 2000 |
+
+#### Implementation Benefits
+1. 更精确的请求控制
+   - 避免临界时间点的突发流量
+   - 平滑处理请求峰值
+2. 更好的公平性
+   - 用户级别的独立限制
+   - 防止单个用户占用过多资源
+3. 性能优化
+   - 减少 Redis 操作次数
+   - 原子操作避免竞态条件
 
 ### 2. Inventory Management
 ```mermaid
