@@ -244,6 +244,156 @@ def hello():
 def health_check():
     return "OK", 200
 
+# Flash Sale API endpoints
+@app.route("/api/flash-sales", methods=["GET"])
+@rate_limit
+def list_flash_sales():
+    """Get all active flash sale products"""
+    if not redis_client:
+        return jsonify({"error": "Redis connection not available"}), 503
+    
+    current_time = int(time.time())
+    active_products = []
+    
+    for product_id, product in FLASH_SALE_PRODUCTS.items():
+        if product["start_time"] <= current_time <= product["end_time"]:
+            # Get current inventory
+            inventory_key = f"flash_sale:inventory:{product_id}"
+            remaining = int(redis_client.get(inventory_key) or 0)
+            
+            # Add product with remaining inventory
+            product_data = product.copy()
+            product_data["remaining"] = remaining
+            active_products.append(product_data)
+    
+    return jsonify({
+        "flash_sales": active_products,
+        "count": len(active_products),
+        "server_time": current_time
+    })
+
+@app.route("/api/flash-sales/<product_id>", methods=["GET"])
+@rate_limit
+def get_flash_sale(product_id):
+    """Get details of a specific flash sale product"""
+    if not redis_client:
+        return jsonify({"error": "Redis connection not available"}), 503
+    
+    if product_id not in FLASH_SALE_PRODUCTS:
+        return jsonify({"error": "Product not found"}), 404
+    
+    product = FLASH_SALE_PRODUCTS[product_id]
+    current_time = int(time.time())
+    
+    # Check if the flash sale is active
+    if not (product["start_time"] <= current_time <= product["end_time"]):
+        status = "upcoming" if current_time < product["start_time"] else "ended"
+        return jsonify({
+            "product": product,
+            "status": status,
+            "server_time": current_time
+        })
+    
+    # Get current inventory
+    inventory_key = f"flash_sale:inventory:{product_id}"
+    remaining = int(redis_client.get(inventory_key) or 0)
+    
+    product_data = product.copy()
+    product_data["remaining"] = remaining
+    product_data["status"] = "active"
+    
+    return jsonify({
+        "product": product_data,
+        "server_time": current_time
+    })
+
+@app.route("/api/flash-sales/<product_id>/order", methods=["POST"])
+@rate_limit
+def place_order(product_id):
+    """Place an order for a flash sale product with strict inventory control"""
+    if not redis_client:
+        return jsonify({"error": "Redis connection not available"}), 503
+    
+    if product_id not in FLASH_SALE_PRODUCTS:
+        return jsonify({"error": "Product not found"}), 404
+    
+    product = FLASH_SALE_PRODUCTS[product_id]
+    current_time = int(time.time())
+    
+    # Check if the flash sale is active
+    if not (product["start_time"] <= current_time <= product["end_time"]):
+        status = "upcoming" if current_time < product["start_time"] else "ended"
+        return jsonify({
+            "error": f"Flash sale is {status}",
+            "status": status
+        }), 400
+    
+    # 使用原子性Lua脚本处理库存和订单
+    try:
+        # 生成订单ID和获取用户ID
+        order_id = str(uuid.uuid4())
+        user_id = request.headers.get('X-User-ID', request.remote_addr)
+        
+        # 设置库存和订单键
+        inventory_key = f"flash_sale:inventory:{product_id}"
+        order_key = f"flash_sale:order:{order_id}"
+        
+        # 使用预加载的Lua脚本原子性地检查和减少库存
+        result = redis_client.evalsha(
+            decrement_inventory_sha,
+            2,                           # 两个键名
+            inventory_key,               # KEYS[1]: 库存键
+            order_key,                   # KEYS[2]: 订单键
+            user_id,                     # ARGV[1]: 用户ID
+            product_id,                  # ARGV[2]: 产品ID
+            product["flash_sale_price"], # ARGV[3]: 价格
+            current_time,                # ARGV[4]: 时间戳
+            product["quantity"]          # ARGV[5]: 初始库存限制
+        )
+        
+        # 解析Lua脚本返回结果
+        success_code = result[0]
+        message = result[1]
+        
+        if success_code == 1:  # 成功
+            return jsonify({
+                "message": "Order placed successfully",
+                "order_id": order_id,
+                "status": "success"
+            })
+        else:  # 失败（如库存不足）
+            return jsonify({
+                "error": message,
+                "status": "failed"
+            }), 400
+            
+    except Exception as e:
+        # 记录错误
+        print(f"Error processing order: {e}")
+        return jsonify({
+            "error": "Internal server error",
+            "status": "error"
+        }), 500
+
+@app.route("/api/orders/<order_id>", methods=["GET"])
+@rate_limit
+def get_order_status(order_id):
+    """Check the status of an order"""
+    if not redis_client:
+        return jsonify({"error": "Redis connection not available"}), 503
+    
+    order_key = f"flash_sale:order:{order_id}"
+    order_data = redis_client.hgetall(order_key)
+    
+    if not order_data:
+        return jsonify({"error": "Order not found"}), 404
+    
+    return jsonify({
+        "order_id": order_id,
+        "status": order_data.get("status", "unknown"),
+        "details": order_data
+    })
+
 if __name__ == "__main__":
     # Start on 0.0.0.0:5001 to avoid conflict with AirPlay on macOS
     app.run(host="0.0.0.0", port=5001)

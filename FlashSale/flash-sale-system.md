@@ -77,7 +77,7 @@ flowchart TD
 ## Architecture Components
 
 ### 1. Rate Limiting
-两层速率限制保护机制：
+Two-layer rate limiting protection mechanism:
 
 #### Global Rate Limiting
 ```mermaid
@@ -90,10 +90,10 @@ graph TD
     E -->|No| G[Return 429]
 ```
 
-- 基于滑动时间窗口的全局速率限制
-- 同时考虑前一秒和当前秒的请求总数
-- 使用 Redis 的原子操作保证计数准确性
-- 自动清理过期的计数器（5秒后）
+- Sliding time window based global rate limiting
+- Considers total requests from both current and previous second
+- Uses Redis atomic operations to ensure accurate counting
+- Automatic cleanup of expired counters (after 5 seconds)
 
 #### Per-User Rate Limiting
 ```mermaid
@@ -107,29 +107,29 @@ graph TD
     F --> H[Allow Request]
 ```
 
-- 改进的令牌桶算法实现
-- 使用微秒级时间戳提高精度
-- Redis Pipeline 保证原子性
-- 动态令牌补充
-- 自动过期清理（1小时）
+- Improved token bucket algorithm implementation
+- Uses microsecond-level timestamps for better precision
+- Redis Pipeline ensures atomicity
+- Dynamic token replenishment
+- Automatic expiration cleanup (1 hour)
 
 #### Rate Limit Configuration
 | Parameter | Description | Default |
 |-----------|-------------|----------|
-| RATE_LIMIT_TOKENS | 每用户初始令牌数 | 100 |
-| TOKEN_REFILL_RATE | 每秒补充令牌数 | 20 |
-| GLOBAL_RATE_LIMIT | 全局每秒请求限制 | 2000 |
+| RATE_LIMIT_TOKENS | Initial tokens per user | 100 |
+| TOKEN_REFILL_RATE | Tokens refilled per second | 20 |
+| GLOBAL_RATE_LIMIT | Global requests per second limit | 2000 |
 
 #### Implementation Benefits
-1. 更精确的请求控制
-   - 避免临界时间点的突发流量
-   - 平滑处理请求峰值
-2. 更好的公平性
-   - 用户级别的独立限制
-   - 防止单个用户占用过多资源
-3. 性能优化
-   - 减少 Redis 操作次数
-   - 原子操作避免竞态条件
+1. More precise request control
+   - Prevents traffic spikes at critical time points
+   - Smoothly handles request peaks
+2. Better fairness
+   - Independent limits at user level
+   - Prevents single user from consuming too many resources
+3. Performance optimization
+   - Reduces number of Redis operations
+   - Atomic operations prevent race conditions
 
 ### 2. Inventory Management
 ```mermaid
