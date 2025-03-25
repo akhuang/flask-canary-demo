@@ -13,6 +13,8 @@ function init(args)
   math.randomseed(os.time() + id * 1000)
   user_id = math.random(1, 10000)
   request_count = 0
+  -- Create a fixed user ID for this thread
+  thread_user_id = "user-" .. user_id
 end
 
 function request()
@@ -20,7 +22,8 @@ function request()
   -- Set a custom user ID header to simulate different users
   headers = {}
   headers["Content-Type"] = "application/json"
-  headers["X-User-ID"] = "user-" .. user_id .. "-" .. request_count
+  -- Use the fixed thread_user_id instead of generating a new one per request
+  headers["X-User-ID"] = thread_user_id
   
   -- This is a POST request with an empty body
   return wrk.format("POST", nil, headers, "")
@@ -65,4 +68,4 @@ function done(summary, latency, requests)
   io.write("Mean latency: " .. string.format("%.2f", latency.mean / 1000) .. " ms\n")
   io.write("Max latency: " .. string.format("%.2f", latency.max / 1000) .. " ms\n")
   io.write("Requests/sec: " .. string.format("%.2f", summary.requests / summary.duration * 1000000) .. "\n")
-end 
+end

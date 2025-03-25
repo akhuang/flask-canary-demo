@@ -167,28 +167,42 @@ def rate_limit(f):
         
         # Check global rate limit first
         global_key = "flash_sale:global_rate_limit"
-        current_global_count = redis_client.incr(global_key)
-        if redis_client.ttl(global_key) < 0:
-            redis_client.expire(global_key, 1)  # Reset every second
+        current_timestamp = int(time.time())
+        previous_timestamp = current_timestamp - 1
         
-        if current_global_count > GLOBAL_RATE_LIMIT:
+        # 使用 pipeline 保证原子性
+        pipe = redis_client.pipeline()
+        # 获取上一秒的计数
+        pipe.get(f"{global_key}:{previous_timestamp}")
+        # 递增当前秒的计数
+        pipe.incr(f"{global_key}:{current_timestamp}")
+        # 设置过期时间
+        pipe.expire(f"{global_key}:{current_timestamp}", 5)  # 保留5秒以便于监控
+        results = pipe.execute()
+        
+        # 获取前一秒和当前秒的请求总数
+        prev_count = int(results[0] or 0)
+        current_count = int(results[1] or 0)
+        
+        # 如果一秒内的总请求数超过限制
+        if prev_count + current_count > GLOBAL_RATE_LIMIT:
             return jsonify({"error": "Too many requests overall"}), 429
         
         # Check user-specific rate limit using token bucket algorithm
         user_key = f"flash_sale:rate_limit:{user_id}"
         
-        # Get current tokens and last request time
-        pipeline = redis_client.pipeline()
-        pipeline.hmget(user_key, ["tokens", "last_request"])
-        pipeline.time()  # Get current server time
-        results = pipeline.execute()
+        # 使用 pipeline 保证原子性
+        pipe = redis_client.pipeline()
+        pipe.hmget(user_key, ["tokens", "last_request"])
+        pipe.time()
+        results = pipe.execute()
         
         tokens, last_request = results[0]
-        server_time = results[1][0]  # Redis server time in seconds
+        server_time = float(results[1][0]) + float(results[1][1]) / 1000000  # 转换为带微秒的时间戳
         
         # Initialize if not exists
         if tokens is None:
-            tokens = RATE_LIMIT_TOKENS
+            tokens = float(RATE_LIMIT_TOKENS)
             last_request = server_time
         else:
             tokens = float(tokens)
@@ -197,23 +211,21 @@ def rate_limit(f):
             # Calculate token refill
             time_passed = server_time - last_request
             token_refill = time_passed * TOKEN_REFILL_RATE
-            tokens = min(RATE_LIMIT_TOKENS, tokens + token_refill)
+            tokens = min(float(RATE_LIMIT_TOKENS), tokens + token_refill)
         
         # Check if user has enough tokens
         if tokens < 1:
             return jsonify({"error": "Rate limit exceeded"}), 429
         
-        # Consume a token
+        # Consume a token and update state atomically
+        pipe = redis_client.pipeline()
         tokens -= 1
-        
-        # Update user's tokens and last request time
-        redis_client.hmset(user_key, {
-            "tokens": tokens,
-            "last_request": server_time
+        pipe.hmset(user_key, {
+            "tokens": str(tokens),
+            "last_request": str(server_time)
         })
-        
-        # Set expiration to clean up
-        redis_client.expire(user_key, 3600)  # 1 hour
+        pipe.expire(user_key, 3600)  # 1 hour
+        pipe.execute()
         
         return f(*args, **kwargs)
     
